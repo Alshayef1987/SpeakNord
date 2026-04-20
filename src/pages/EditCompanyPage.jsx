@@ -1,15 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
-export default function AddCompanyPage() {
+export default function EditCompanyPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
+    id: "",
     companyName: "",
     contactPerson: "",
     phone: "",
     email: "",
-    address: "", // ✅ added here
     status: "Interested",
     notes: "",
   });
+
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    const savedCompanies =
+      JSON.parse(localStorage.getItem("companies")) || [];
+
+    const companyToEdit = savedCompanies.find(
+      (company) => String(company.id) === String(id)
+    );
+
+    if (companyToEdit) {
+      setFormData(companyToEdit);
+      setNotFound(false);
+    } else {
+      setNotFound(true);
+    }
+  }, [id]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -22,36 +44,35 @@ export default function AddCompanyPage() {
   function handleSubmit(event) {
     event.preventDefault();
 
-    const existingCompanies =
+    const savedCompanies =
       JSON.parse(localStorage.getItem("companies")) || [];
 
-    const newCompany = {
-      id: Date.now(),
-      ...formData,
-    };
-
-    const updatedCompanies = [...existingCompanies, newCompany];
+    const updatedCompanies = savedCompanies.map((company) =>
+      String(company.id) === String(id) ? formData : company
+    );
 
     localStorage.setItem("companies", JSON.stringify(updatedCompanies));
 
-    alert("Company added successfully!");
+    alert("Company updated successfully!");
+    navigate("/companies");
+  }
 
-    setFormData({
-      companyName: "",
-      contactPerson: "",
-      phone: "",
-      email: "",
-      address: "", // ✅ reset here
-      status: "Interested",
-      notes: "",
-    });
+  if (notFound) {
+    return (
+      <div className="page">
+        <div className="card">
+          <h1>Company Not Found</h1>
+          <p>The selected company could not be found.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="page">
       <div className="card">
-        <h1>Add Company</h1>
-        <p>Fill in the company details below.</p>
+        <h1>Edit Company</h1>
+        <p>Update the company details below.</p>
 
         <form className="form" onSubmit={handleSubmit}>
           <input
@@ -88,15 +109,6 @@ export default function AddCompanyPage() {
             onChange={handleChange}
           />
 
-          {/* ✅ NEW FIELD */}
-          <input
-            type="text"
-            name="address"
-            placeholder="Company Address"
-            value={formData.address}
-            onChange={handleChange}
-          />
-
           <select
             name="status"
             value={formData.status}
@@ -114,7 +126,7 @@ export default function AddCompanyPage() {
             onChange={handleChange}
           />
 
-          <button type="submit">Save Company</button>
+          <button type="submit">Update Company</button>
         </form>
       </div>
     </div>
